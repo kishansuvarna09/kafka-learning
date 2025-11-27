@@ -1,62 +1,77 @@
-# Kafka Learning Environment
+# Kafka Learning Project
 
-This project provides a simple, single-node Kafka and Zookeeper setup using Docker Compose. It's designed for local development and for learning Apache Kafka.
+This project is a simple demonstration of a Kafka producer and consumer using Python with `aiokafka` and a `FastAPI` web server.
+
+## Project Structure
+The project is organized to separate the application source code from project-level configuration.
+
+```
+kafka-learning/
+├── app/
+│   ├── __init__.py         # Makes 'app' a Python package
+│   ├── consumer.py         # Kafka consumer script
+│   ├── main.py             # FastAPI application
+│   ├── producer.py         # Kafka producer service
+│   └── requirements.txt    
+├── .gitignore
+└── README.md
+```
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed on your system:
+- Python 3.7+
+- A running Kafka instance (e.g., using Docker).
+- An "events" topic created in Kafka.
 
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+## Setup
 
-## Services
+1.  **Clone the repository** (if you are working with git) and navigate into the project directory.
 
-This setup consists of two main services defined in `docker-compose.yml`:
+2.  **Create and activate a virtual environment.** The project is set up to use a `venv` directory inside the `app` folder.
 
-- `zookeeper`: An instance of Zookeeper, which Kafka uses for managing and coordinating brokers.
-- `kafka`: A single Kafka broker instance.
+    ```bash
+    # On Windows
+    python -m venv app/venv
+    app\venv\Scripts\activate
 
-The Kafka broker is configured to be accessible from your host machine on `localhost:9092`.
+    # On macOS/Linux
+    python3 -m venv app/venv
+    source app/venv/bin/activate
+    ```
 
-## How to Use
+3.  **Install the dependencies:**
 
-### Start the Cluster
+    ```bash
+    pip install -r app/requirements.txt
+    ```
 
-To start the Kafka and Zookeeper containers in detached mode, run the following command from the root of the project directory:
+## Configuration
 
-```bash
-docker-compose up -d
-```
+Currently, the Kafka bootstrap server is hardcoded to `localhost:9092` in both `app/producer.py` and `app/consumer.py`.
 
-### Stop the Cluster
+For a real-world application, it is recommended to move this configuration to environment variables or a configuration file.
 
-To stop and remove the containers, networks, and volumes, run:
+## How to Run
 
-```bash
-docker-compose down
-```
+You'll need two separate terminals to run the consumer and the producer (FastAPI server).
 
-## Interacting with Kafka
+1.  **Run the Kafka Consumer:**
+    In your first terminal, run the consumer script:
+    ```bash
+    python -m app.consumer
+    ```
+    You should see the message "Kafka consumer started...".
 
-Once the cluster is running, you can use the Kafka command-line tools to interact with it. The following commands should be run from your terminal in the project directory.
+2.  **Run the FastAPI Producer:**
+    In your second terminal, start the FastAPI server using `uvicorn`:
+    ```bash
+    uvicorn app.main:app --reload
+    ```
 
-### Create a Topic
+3.  **Send a message:**
+    You can now send a `POST` request to the `/publish` endpoint. Here is an example using `curl`:
+    ```bash
+    curl -X POST "http://127.0.0.1:8000/publish" -H "Content-Type: application/json" -d '{"key": "value", "another_key": 123}'
+    ```
 
-Create a new topic named `my-topic` with one partition and a replication factor of one.
-
-```bash
-docker-compose exec kafka kafka-topics --create --topic my-topic --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1
-docker-compose exec kafka kafka-topics --create --topic my-topic --bootstrap-server kafka:29092 --replication-factor 1 --partitions 1
-```
-
-### Produce Messages to a Topic
-
-```bash
-docker-compose exec kafka kafka-console-producer --topic my-topic --bootstrap-server localhost:9092
-```
-
-### Consume Messages from a Topic
-
-```bash
-docker-compose exec kafka kafka-console-consumer --topic my-topic --from-beginning --bootstrap-server localhost:9092
-```
+    In the consumer terminal, you should see the consumed message printed.

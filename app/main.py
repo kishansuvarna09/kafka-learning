@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from producer import producer_service
+from app.producer import producer_service
 
 app = FastAPI()
 
@@ -13,5 +13,5 @@ async def shutdown_event():
 
 @app.post("/publish")
 async def publish(message: dict):
-    await producer_service.send("my_topic", message)
+    await producer_service.send("events", message)
     return {"status": "message sent"}
